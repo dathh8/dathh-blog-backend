@@ -7,11 +7,15 @@ import { Model } from 'mongoose';
 import { hashPasswordHepler } from '@/helpers/util';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>
+    @InjectModel(User.name) private userModel: Model<User>,
+    private readonly mailerService: MailerService
   ) {
   }
 
@@ -31,8 +35,29 @@ export class UsersService {
     }
     const hashPassword = await hashPasswordHepler(createUserDto.password);
     createUserDto.password = hashPassword;
+    let codeId = uuidv4();
+    createUserDto.codeId = codeId;
     const createdUser = new this.userModel(createUserDto);
     createdUser.save();
+
+    //send email
+    this.mailerService
+      .sendMail({
+        to: createUserDto.email, // list of receivers
+        subject: 'Active accout', // Subject line
+        template: "register",
+        context: {
+          userName: createUserDto.name,
+          codeId: codeId
+        }
+      })
+      .then(() => {
+        console.log('send success');
+      })
+      .catch(() => {
+        console.log('send fail');
+      });
+
     return {
       _id: createdUser._id
     };

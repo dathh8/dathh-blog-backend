@@ -9,4 +9,7 @@ export class UpdateUserDto {
 
     @IsOptional()
     name: string;
+
+    codeId: string;
+    isActive: boolean;
 }

@@ -1,5 +1,6 @@
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import dayjs from 'dayjs';
 import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
@@ -14,6 +15,12 @@ export class User {
 
   @Prop()
   password: string;
+
+   @Prop()
+  codeId: string;
+
+   @Prop({default: dayjs().add(1, 'minutes')})
+  codeExpired: string;
 
   @Prop({default: false})
   isActive: boolean;
