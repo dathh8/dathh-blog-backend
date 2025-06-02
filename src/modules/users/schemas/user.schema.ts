@@ -19,7 +19,7 @@ export class User {
    @Prop()
   codeId: string;
 
-   @Prop({default: dayjs().add(1, 'minutes')})
+   @Prop()
   codeExpired: string;
 
   @Prop({default: false})

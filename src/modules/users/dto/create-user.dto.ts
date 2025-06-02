@@ -12,4 +12,7 @@ export class CreateUserDto {
 
     @IsOptional()
     codeId: string;
+
+    @IsOptional()
+    codeExpired: string;
 }

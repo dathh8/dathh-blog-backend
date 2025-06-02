@@ -4,6 +4,7 @@ import { UsersService } from '@/modules/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { comparePasswordHelper } from '@/helpers/util';
 import { CreateUserDto } from '@/modules/users/dto/create-user.dto';
+import { ChangePasswordAuthDto, CodeAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -38,7 +39,7 @@ export class AuthService {
     if (!isValidPassword) {
       return null;
     }
-    
+
     return user;
   }
 
@@ -46,11 +47,32 @@ export class AuthService {
     const payload = { username: user.email, sub: user._id };
     return {
       access_token: this.jwtService.sign(payload),
+      user: {
+        email: user.email,
+        _id: user._id,
+        name: user.name
+      }
     };
   }
 
   async register(createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  async checkCode(codeAuthDto: CodeAuthDto) {
+    return this.usersService.handleActive(codeAuthDto);
+  }
+
+  async retryActive(email: string) {
+    return this.usersService.retryActive(email);
+  }
+
+   async retryPassword(email: string) {
+    return this.usersService.retryPassword(email);
+  }
+
+    async changePassword(changePasswordAuthDto: ChangePasswordAuthDto) {
+    return this.usersService.changePassword(changePasswordAuthDto);
   }
 
   // async validateUser(username: string, pass: string): Promise<any> {
