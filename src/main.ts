@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
-import { IncomingMessage, ServerResponse } from 'http';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +16,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1', { exclude: [''] });
 
   app.enableCors({
-    origin: ['https://dathh-blog.vercel.app'],
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE, OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
