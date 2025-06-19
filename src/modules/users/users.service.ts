@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.entity';
 import { Repository } from 'typeorm';
-import { hashPasswordHepler } from '@/helpers/util';
+import { hashPasswordHepler } from '../../helpers/util';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
