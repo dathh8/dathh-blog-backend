@@ -1,29 +1,35 @@
-
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
-import { HydratedDocument } from 'mongoose';
+import { EntitySchema } from 'typeorm';
+import { User } from './user.entity';
 
-export type UserDocument = HydratedDocument<User>;
-
-@Schema()
-export class User {
-  @Prop()
-  name: string;
-
-  @Prop()
-  email: string;
-
-  @Prop()
-  password: string;
-
-   @Prop()
-  codeId: string;
-
-   @Prop()
-  codeExpired: string;
-
-  @Prop({default: false})
-  isActive: boolean;
-}
-
-export const UserSchema = SchemaFactory.createForClass(User);
+export const UserSchema = new EntitySchema<User>({
+  name: 'User',
+  target: User,
+  columns: {
+    id: {
+      type: Number,
+      primary: true,
+      generated: true,
+    },
+    name: {
+      type: String,
+    },
+    email: {
+      type: String,
+    },
+    is_active: {
+      type: Boolean,
+      default: false,
+    },
+    code_expired: {
+      type: String,
+    },
+    code_id: {
+      type: String,
+    },
+    password: {
+      type: String,
+    },
+  },
+  relations: {},
+});

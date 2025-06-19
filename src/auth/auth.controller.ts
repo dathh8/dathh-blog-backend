@@ -71,7 +71,7 @@ export class AuthController {
         template: "register",
         context: {
           userName: 'test',
-          codeId: '123'
+          code_id: '123'
         }
       })
       .then(() => {

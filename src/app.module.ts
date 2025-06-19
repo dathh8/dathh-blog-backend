@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { TransformInterceptor } from './core/transform.interceptor';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -50,6 +51,21 @@ import { TransformInterceptor } from './core/transform.interceptor';
       }),
       inject: [ConfigService],
     }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('MYSQL_HOST'),
+        port: parseInt(configService.get<string>('MYSQL_PORT') || '3306', 10),
+        username: configService.get<string>('MYSQL_USER_NAME'),
+        password: configService.get<string>('MYSQL_PASSWORD'),
+        database: configService.get<string>('MYSQL_DATABASE'),
+        entities: [],
+        synchronize: true,
+        autoLoadEntities: true,
+      }),
+      inject: [ConfigService],
+    }),
   ],
   controllers: [AppController],
   providers: [
@@ -60,8 +76,8 @@ import { TransformInterceptor } from './core/transform.interceptor';
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: TransformInterceptor
-    }
+      useClass: TransformInterceptor,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}

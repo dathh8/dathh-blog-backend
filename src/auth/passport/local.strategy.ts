@@ -15,7 +15,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException('Username or password invalid');
     }
-    if(user.isActive === false) {
+    if(user.is_active === false) {
       throw new BadRequestException('User not active');
     }
 

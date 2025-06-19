@@ -1,4 +1,3 @@
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '@/modules/users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -10,19 +9,17 @@ import { ChangePasswordAuthDto, CodeAuthDto } from './dto/create-auth.dto';
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService
-  ) {
-
-  }
+    private jwtService: JwtService,
+  ) {}
 
   async signIn(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('Invalid User')
+      throw new UnauthorizedException('Invalid User');
     }
     const isValidPassword = await comparePasswordHelper(pass, user.password);
     if (!isValidPassword) {
-      throw new UnauthorizedException('Invalid Password')
+      throw new UnauthorizedException('Invalid Password');
     }
     const payload = { sub: user.name, username: user.email };
     return {
@@ -35,6 +32,7 @@ export class AuthService {
     if (!user) {
       return null;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const isValidPassword = await comparePasswordHelper(pass, user.password);
     if (!isValidPassword) {
       return null;
@@ -44,14 +42,17 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { username: user.email, sub: user._id };
+    const payload = { username: user.email, sub: user.id };
+    const token = this.jwtService.sign(payload);
+    const tokenDecode = this.jwtService.decode(token);
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: token,
+      expires_at: tokenDecode.exp,
       user: {
         email: user.email,
-        _id: user._id,
-        name: user.name
-      }
+        _id: user.id,
+        name: user.name,
+      },
     };
   }
 
@@ -67,11 +68,11 @@ export class AuthService {
     return this.usersService.retryActive(email);
   }
 
-   async retryPassword(email: string) {
+  async retryPassword(email: string) {
     return this.usersService.retryPassword(email);
   }
 
-    async changePassword(changePasswordAuthDto: ChangePasswordAuthDto) {
+  async changePassword(changePasswordAuthDto: ChangePasswordAuthDto) {
     return this.usersService.changePassword(changePasswordAuthDto);
   }
 

@@ -3,13 +3,12 @@ import { CreateUserDto } from './create-user.dto';
 import { IsMongoId, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
-    @IsMongoId({message: "Invalid id"})
-    @IsNotEmpty()
-    _id: string;
+  @IsNotEmpty()
+  id: number;
 
-    @IsOptional()
-    name: string;
+  @IsOptional()
+  name: string;
 
-    codeId: string;
-    isActive: boolean;
+  code_id: string;
+  is_active: boolean;
 }

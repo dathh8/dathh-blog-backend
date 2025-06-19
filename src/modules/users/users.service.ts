@@ -2,8 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { User } from './schemas/user.entity';
+import { Repository } from 'typeorm';
 import { hashPasswordHepler } from '@/helpers/util';
 import aqp from 'api-query-params';
 import mongoose from 'mongoose';
@@ -11,47 +11,47 @@ import { v4 as uuidv4 } from 'uuid';
 import dayjs from 'dayjs';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ChangePasswordAuthDto, CodeAuthDto } from '@/auth/dto/create-auth.dto';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(User.name) private userModel: Model<User>,
-    private readonly mailerService: MailerService
-  ) {
-  }
+    @InjectRepository(User) private usersRepository: Repository<User>,
+    private readonly mailerService: MailerService,
+  ) {}
 
   /**
    * Check is email already exist
    * @param email
-   * @returns 
+   * @returns
    */
   isEmailExist = async (email: string) => {
-    const user = await this.userModel.exists({ email });
+    const user = await this.usersRepository.findOneBy({ email });
     return !!user;
-  }
+  };
 
   async create(createUserDto: CreateUserDto) {
     if (await this.isEmailExist(createUserDto.email)) {
-      throw new BadRequestException(`Email ${createUserDto.email} already existed`);
+      throw new BadRequestException(
+        `Email ${createUserDto.email} already existed`,
+      );
     }
-    const hashPassword = await hashPasswordHepler(createUserDto.password);
-    createUserDto.password = hashPassword;
-    let codeId = uuidv4();
-    createUserDto.codeExpired = dayjs().add(5, 'minutes').toISOString();
-    createUserDto.codeId = codeId;
-    const createdUser = new this.userModel(createUserDto);
-    createdUser.save();
+    createUserDto.password = await hashPasswordHepler(createUserDto.password);
+    const codeId = uuidv4();
+    createUserDto.code_expired = dayjs().add(5, 'minutes').toISOString();
+    createUserDto.code_id = codeId;
+    const createdUser = await this.usersRepository.save(this.usersRepository.create(createUserDto));
 
     //send email
     this.mailerService
       .sendMail({
         to: createUserDto.email, // list of receivers
-        subject: 'Active accout', // Subject line
-        template: "register",
+        subject: 'Active account', // Subject line
+        template: 'register',
         context: {
           userName: createUserDto.name,
-          codeId: codeId
-        }
+          code_id: codeId,
+        },
       })
       .then(() => {
         console.log('send success');
@@ -61,7 +61,7 @@ export class UsersService {
       });
 
     return {
-      _id: createdUser._id
+      id: createdUser.id,
     };
   }
 
@@ -75,16 +75,20 @@ export class UsersService {
     if (!pageSize) {
       pageSize = 10;
     }
-    const totalItems = ((await this.userModel.find(filter)).length);
-    const totalPages = Math.ceil(totalItems / pageSize);
+
     const skip = (current - 1) * pageSize;
 
-    const results = await this.userModel
-      .find(filter)
-      .limit(pageSize)
-      .skip(skip)
-      .select("-password")
-      .sort(sort as any);
+    const [results, totalItems] = await this.usersRepository.findAndCount({
+      where: filter,
+      order: sort,
+      skip,
+      take: pageSize,
+      select: {
+        // Exclude password field
+        password: false,
+      },
+    });
+
     return { results, totalItems };
   }
 
@@ -93,12 +97,13 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    return await this.userModel.findOne({ email })
+    return await this.usersRepository.findOneBy({ email });
   }
 
   async update(updateUserDto: UpdateUserDto) {
-    return await this.userModel.updateOne(
-      { _id: updateUserDto._id }, { ...updateUserDto }
+    return await this.usersRepository.update(
+      { id: updateUserDto.id },
+      { ...updateUserDto },
     );
   }
 
@@ -107,44 +112,49 @@ export class UsersService {
       throw new BadRequestException('Invalid ID');
     }
 
-    return this.userModel.deleteOne({ _id: id });
+    return this.usersRepository.delete({ id: Number(id) });
   }
 
   async handleActive(codeAuthDto: CodeAuthDto) {
-    const user = await this.userModel.findOne({
-      _id: codeAuthDto._id,
-      codeId: codeAuthDto.code
-    })
+    const user = await this.usersRepository.findOneBy({
+      id: codeAuthDto.id,
+      code_id: codeAuthDto.code,
+    });
     if (!user) {
       throw new BadRequestException('code invalid');
     }
     //check expire code
-    const isBeforeCheck = dayjs().isBefore(dayjs(user.codeExpired));
+    const isBeforeCheck = dayjs().isBefore(dayjs(user.code_expired));
     if (isBeforeCheck) {
-      await this.userModel.updateOne({ _id: codeAuthDto._id }, {
-        isActive: true
-      })
+      await this.usersRepository.update(
+        { id: codeAuthDto.id },
+        {
+          is_active: true,
+        },
+      );
     } else {
       throw new BadRequestException('code invalid');
     }
-
 
     return { isBeforeCheck: isBeforeCheck };
   }
 
   async retryActive(email: string) {
-    const user = await this.userModel.findOne({ email});
+    const user = await this.usersRepository.findOneBy({ email });
     if (!user) {
-      throw new BadRequestException("User not existed");
+      throw new BadRequestException('User not existed');
     }
-    if (user.isActive) {
-      throw new BadRequestException("User had been ative");
+    if (user.is_active) {
+      throw new BadRequestException('User had been ative');
     }
     const codeId = uuidv4();
-    await user.updateOne({
-      codeId: codeId,
-      codeExpired: dayjs().add(5, 'minutes').toISOString()
-    })
+    await this.usersRepository.update(
+      { id: user.id },
+      {
+        code_id: codeId,
+        code_expired: dayjs().add(5, 'minutes').toISOString(),
+      },
+    );
 
     //send email
     // this.mailerService
@@ -164,31 +174,34 @@ export class UsersService {
     //     console.log('send fail');
     //   });
 
-    return { _id: user._id };
+    return { id: user.id };
   }
 
   async retryPassword(email: string) {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.usersRepository.findOneBy({ email });
     if (!user) {
-      throw new BadRequestException("User not existed");
+      throw new BadRequestException('User not existed');
     }
 
     const codeId = uuidv4();
-    await user.updateOne({
-      codeId: codeId,
-      codeExpired: dayjs().add(5, 'minutes').toISOString()
-    })
+    await this.usersRepository.update(
+      { id: user.id },
+      {
+        code_id: codeId,
+        code_expired: dayjs().add(5, 'minutes').toISOString(),
+      },
+    );
 
-     //send email
+    //send email
     this.mailerService
       .sendMail({
         to: user.email, // list of receivers
         subject: 'Forgot password', // Subject line
-        template: "register",
+        template: 'register',
         context: {
           userName: user.name,
-          codeId: codeId
-        }
+          code_id: codeId,
+        },
       })
       .then(() => {
         console.log('send success');
@@ -197,31 +210,35 @@ export class UsersService {
         console.log('send fail');
       });
 
-
-    return { _id: user._id, email: user.email };
+    return { id: user.id, email: user.email };
   }
 
   async changePassword(data: ChangePasswordAuthDto) {
-    if(data.password !== data.confirmPassword) {
-      throw new BadRequestException("Invalid Input");
+    if (data.password !== data.confirmPassword) {
+      throw new BadRequestException('Invalid Input');
     }
 
-     const user = await this.userModel.findOne({email: data.email,  codeId: data.code})
+    const user = await this.usersRepository.findOneBy({
+      email: data.email,
+      code_id: data.code,
+    });
     if (!user) {
       throw new BadRequestException('Invalid User');
     }
     //check expire code
-    const isBeforeCheck = dayjs().isBefore(dayjs(user.codeExpired));
+    const isBeforeCheck = dayjs().isBefore(dayjs(user.code_expired));
     if (isBeforeCheck) {
       const newPassword = await hashPasswordHepler(data.password);
-      await user.updateOne({
-      password: newPassword
-    })
-
+      await this.usersRepository.update(
+        { id: user.id },
+        {
+          password: newPassword,
+        },
+      );
     } else {
       throw new BadRequestException('code invalid');
     }
 
-    return {result: true}
+    return { result: true };
   }
 }
