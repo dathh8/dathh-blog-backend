@@ -4,7 +4,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { LocalAuthGuard } from './passport/local-auth.guard';
 import { JwtAuthGuard } from './passport/jwt-auth.guard';
 import { Public, ResponseMessage } from '../decorator/decorator';
-import { CreateUserDto } from '@/modules/users/dto/create-user.dto';
+import { CreateUserDto } from '../modules/users/dto/create-user.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ChangePasswordAuthDto, CodeAuthDto } from './dto/create-auth.dto';
 
