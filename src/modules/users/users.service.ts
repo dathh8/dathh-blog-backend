@@ -200,7 +200,7 @@ export class UsersService {
         template: 'register',
         context: {
           userName: user.name,
-          code_id: codeId,
+          codeId: codeId,
         },
       })
       .then(() => {
