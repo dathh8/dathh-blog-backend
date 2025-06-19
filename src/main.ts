@@ -24,21 +24,4 @@ async function bootstrap() {
   await app.listen(port);
 }
 
-export default async (req: IncomingMessage, res: ServerResponse) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://dathh-blog.vercel.app');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET,HEAD,PUT,PATCH,POST,DELETE',
-  );
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    res.end();
-    return;
-  }
-  const server = await bootstrap();
-  server(req, res);
-};
-
 bootstrap();
