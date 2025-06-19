@@ -16,7 +16,10 @@ async function bootstrap() {
   //config cors
   app.enableCors(
     {
-      "origin": '*', // Allow all origins, you can specify a specific origin if needed
+      "origin": [
+        true,
+        'https://dathh-blog.vercel.app',
+      ],
       "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
       "preflightContinue": false,
       credentials: true
