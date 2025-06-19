@@ -17,7 +17,6 @@ async function bootstrap() {
   app.enableCors(
     {
       "origin": [
-        true,
         'https://dathh-blog.vercel.app',
       ],
       "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
