@@ -40,7 +40,9 @@ export class UsersService {
     const codeId = uuidv4();
     createUserDto.code_expired = dayjs().add(5, 'minutes').toISOString();
     createUserDto.code_id = codeId;
-    const createdUser = await this.usersRepository.save(this.usersRepository.create(createUserDto));
+    const createdUser = await this.usersRepository.save(
+      this.usersRepository.create(createUserDto),
+    );
 
     //send email
     this.mailerService
@@ -145,7 +147,7 @@ export class UsersService {
       throw new BadRequestException('User not existed');
     }
     if (user.is_active) {
-      throw new BadRequestException('User had been ative');
+      throw new BadRequestException('User had been active');
     }
     const codeId = uuidv4();
     await this.usersRepository.update(

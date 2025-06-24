@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import { EntitySchema } from 'typeorm';
 import { User } from './user.entity';
 
