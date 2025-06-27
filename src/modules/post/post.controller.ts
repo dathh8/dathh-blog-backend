@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Public } from '@/decorator/decorator';
+import { Public } from '../../decorator/decorator';
 
 @Controller('post')
 export class PostController {
